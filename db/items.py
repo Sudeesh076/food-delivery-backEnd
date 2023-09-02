@@ -1,6 +1,8 @@
 import sqlite3
 import uuid
 
+from db.init import check_value_exists
+
 
 def fetch_items_by_restaurant_id(restaurant_id):
     db = sqlite3.connect("foodDelivery.db")
@@ -32,6 +34,7 @@ def add_item(data, restaurant_id):
     db = sqlite3.connect("foodDelivery.db")
     cursor = db.cursor()
     item_id = str(uuid.uuid4())
+    check_value_exists(restaurant_id, "id", "restaurants")
 
     cursor.execute('''INSERT INTO items (id, name, price, type, imgUrl, nutritionalUrl, restaurant_id)
                       VALUES (?, ?, ?, ?, ?, ?, ?)''',

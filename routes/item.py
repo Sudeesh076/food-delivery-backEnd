@@ -22,6 +22,6 @@ def new_item(restaurant_id):
 def get_items_by_restaurant(restaurant_id):
     try:
         items = fetch_items_by_restaurant_id(restaurant_id)
-        return jsonify({"items": items}), 200
+        return jsonify(items), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
