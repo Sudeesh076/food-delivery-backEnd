@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from db.order import add_order, update_order_status, fetch_order
+from db.order import add_order, update_order_status, fetch_order, fetch_orders
 
 order_bp = Blueprint('order', __name__)
 
@@ -46,6 +46,30 @@ def fetchOrders():
             orders = fetch_order(user_id=user_id)
         elif restaurant_id:
             orders = fetch_order(restaurant_id=restaurant_id)
+        else:
+            return jsonify({"message": "No parameters provided"}), 400
+
+        if not orders:
+            return jsonify({"message": "No orders found"}), 200
+
+        return jsonify(orders), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@order_bp.route('/orders', methods=['GET'])
+def fetchAllOrders():
+    try:
+        order_id = request.args.get('order_id')
+        user_id = request.args.get('user_id')
+        restaurant_id = request.args.get('restaurant_id')
+
+        if order_id:
+            orders = fetch_orders(order_id=order_id)
+        elif user_id:
+            orders = fetch_orders(user_id=user_id)
+        elif restaurant_id:
+            orders = fetch_orders(restaurant_id=restaurant_id)
         else:
             return jsonify({"message": "No parameters provided"}), 400
 

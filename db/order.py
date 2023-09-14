@@ -24,7 +24,8 @@ def add_order(user_id, item_id_list, restaurant_id):
 
         cursor.execute('''INSERT INTO orders (
             id, group_id, user_id, item_id, restaurant_id, createdDateTime, deliveredDateTime, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', (order_id, group_id, user_id, item, restaurant_id, createdDateTime, deliveredDateTime, status))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                       (order_id, group_id, user_id, item, restaurant_id, createdDateTime, deliveredDateTime, status))
 
     db.commit()
     db.close()
@@ -85,5 +86,80 @@ def fetch_order(order_id=None, user_id=None, restaurant_id=None):
     return records
 
 
+def fetch_orders(order_id=None, user_id=None, restaurant_id=None):
+    db = sqlite3.connect("foodDelivery.db")
+    cursor = db.cursor()
+
+    records = []
+    rows = []
+
+    if order_id:
+        cursor.execute("""select group_id as order_id,B.name as Item,A.restaurant_id,
+                        status,createdDateTime,deliveredDateTime,
+                        count(item_id) as quantity ,sum(price) as total ,user_id
+                        from orders A 
+                        LEFT JOIN items B on A.item_id = B.id
+                        WHERE  group_id = ?
+                        group by group_id , item_id ,B.name , A.restaurant_id , status,createdDateTime,deliveredDateTime,user_id
+                        ORDER by createdDateTime DESC""", (order_id,))
+        rows = cursor.fetchall()
+    if user_id:
+        cursor.execute("""select group_id as order_id,B.name as Item,A.restaurant_id,
+                        status,createdDateTime,deliveredDateTime,
+                        count(item_id) as quantity ,sum(price) as total ,user_id
+                        from orders A 
+                        LEFT JOIN items B on A.item_id = B.id
+                        WHERE  user_id = ?
+                        group by group_id , item_id ,B.name ,A.restaurant_id, status,createdDateTime,deliveredDateTime,user_id
+                        ORDER by createdDateTime DESC""", (user_id,))
+        rows = cursor.fetchall()
+    if restaurant_id:
+        cursor.execute("""select group_id as order_id,B.name as Item,A.restaurant_id,
+                        status,createdDateTime,deliveredDateTime,
+                        count(item_id) as quantity ,sum(price) as total ,user_id
+                        from orders A 
+                        LEFT JOIN items B on A.item_id = B.id
+                        WHERE A.restaurant_id = ?
+                        group by group_id , item_id ,B.name, A.restaurant_id, status,createdDateTime,deliveredDateTime,user_id
+                        ORDER by createdDateTime DESC""", (restaurant_id,))
+        rows = cursor.fetchall()
+
+    for row in rows:
+        record = {
+            "order_id": row[0],
+            "status": row[3],
+            "createdDateTime": row[4],
+            "deliveredDateTime": row[5],
+            "itemNames": row[1],
+            "quantity": row[6],
+            "totalPrice": row[7],
+            "restaurant": fetch_restaurant_by_id(row[2]),
+            "user": fetch_user_by_id(row[8])
+        }
+        records.append(record)
+
+    return process_records(records)
 
 
+def process_records(records):
+    grouped_records = {}
+
+    for record in records:
+        order_id = record["order_id"]
+        if order_id not in grouped_records:
+            grouped_records[order_id] = {
+                "order_id": order_id,
+                "status": record["status"],
+                "createdDateTime": record["createdDateTime"],
+                "deliveredDateTime": record["deliveredDateTime"],
+                "restaurant": record["restaurant"],
+                "user": record["user"],
+                "itemNames": [],
+                "quantity": [],
+                "totalPrice": 0
+            }
+        grouped_records[order_id]["itemNames"].append(record["itemNames"])
+        grouped_records[order_id]["quantity"].append(record["quantity"])
+        grouped_records[order_id]["totalPrice"] += record["totalPrice"]
+
+    return list(grouped_records.values())

@@ -99,7 +99,14 @@ def add_sample_data():
     db.close()
 
     add_order(users_data[0][0],
-              [items_data[0][0], items_data[1][0], items_data[0][0]],
+              [items_data[0][0], items_data[1][0], items_data[0][0], items_data[0][0]],
               restaurants_data[0][0])
 
+    add_order(users_data[0][0],
+              [items_data[0][0]],
+              restaurants_data[0][0])
+
+    add_order(users_data[0][0],
+              [items_data[12][0], items_data[13][0], items_data[13][0],items_data[14][0],items_data[14][0]],
+              restaurants_data[1][0])
 
